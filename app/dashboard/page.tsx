@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import FieldCard from '@/components/FieldCard';
 import StatsHeader from '@/components/StatsHeader';
-import UndoButton from '@/components/UndoButton';
 import ActivityLog from '@/components/ActivityLog';
 import AchievementToast from '@/components/AchievementToast';
 
@@ -349,29 +348,33 @@ export default function DashboardPage() {
     setPinnedFields(prev => prev.includes(fieldId) ? prev.filter(id => id !== fieldId) : [...prev, fieldId]);
   }, []);
 
-  const handleUndo = useCallback(async () => {
-    const driverLoads = loads.filter(l => l.driver === driverName);
-    if (driverLoads.length === 0) return;
-
-    const lastLoad = driverLoads[driverLoads.length - 1];
+  const handleDeleteLoad = useCallback(async (loadId: string) => {
+    // Find the load to delete
+    const loadToDelete = loads.find(l => l.id === loadId);
+    if (!loadToDelete) return;
 
     // Optimistically remove
-    setLoads(prev => prev.filter(l => l.id !== lastLoad.id));
+    setLoads(prev => prev.filter(l => l.id !== loadId));
+
+    // Haptic feedback
+    if (navigator.vibrate) {
+      navigator.vibrate([50, 30, 50]);
+    }
 
     // Delete from Supabase
     try {
       const { error } = await supabase
         .from('loads')
         .delete()
-        .eq('id', lastLoad.id);
+        .eq('id', loadId);
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error undoing load:', error);
+      console.error('Error deleting load:', error);
       // Revert on error
-      setLoads(prev => [...prev, lastLoad]);
+      setLoads(prev => [...prev, loadToDelete]);
     }
-  }, [driverName, loads]);
+  }, [loads]);
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('driver');
@@ -379,16 +382,6 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleSettings = useCallback(() => router.push('/settings'), [router]);
-
-  const getLastLoad = useCallback(() => {
-    const driverLoads = loads.filter(l => l.driver === driverName);
-    if (driverLoads.length === 0) return null;
-    const lastLoad = driverLoads[driverLoads.length - 1];
-    const field = fields.find(f => f.id === lastLoad.field_id);
-    const diff = Math.floor((Date.now() - new Date(lastLoad.created_at).getTime()) / 1000);
-    const timeAgo = diff < 60 ? `${diff}s ago` : diff < 3600 ? `${Math.floor(diff / 60)}m ago` : `${Math.floor(diff / 3600)}h ago`;
-    return { fieldName: field?.name || 'Unknown', timeAgo };
-  }, [loads, driverName, fields]);
 
   if (isLoading) {
     return (
@@ -462,9 +455,13 @@ export default function DashboardPage() {
         )}
       </main>
 
-      <UndoButton lastLoad={getLastLoad()} onUndo={handleUndo} />
-
-      <ActivityLog isOpen={showActivity} onClose={() => setShowActivity(false)} activities={activityItems} />
+      <ActivityLog
+        isOpen={showActivity}
+        onClose={() => setShowActivity(false)}
+        activities={activityItems}
+        onDelete={handleDeleteLoad}
+        currentDriver={driverName}
+      />
     </div>
   );
 }
