@@ -51,6 +51,7 @@ export default function FieldCard({
   const [showCelebration, setShowCelebration] = useState(false);
   const [animatedProgress, setAnimatedProgress] = useState(0);
   const holdTimer = useRef<NodeJS.Timeout | null>(null);
+  const holdDelayTimer = useRef<NodeJS.Timeout | null>(null);
   const progressRef = useRef<SVGCircleElement>(null);
   const prevLoads = useRef(currentLoads);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
@@ -148,6 +149,10 @@ export default function FieldCard({
   }, [id, onDump, playSound]);
 
   const cancelHold = useCallback(() => {
+    if (holdDelayTimer.current) {
+      clearTimeout(holdDelayTimer.current);
+      holdDelayTimer.current = null;
+    }
     if (holdTimer.current) {
       clearTimeout(holdTimer.current);
       holdTimer.current = null;
@@ -165,18 +170,24 @@ export default function FieldCard({
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
     isScrolling.current = false;
 
-    // Start hold timer - but don't prevent default yet (allow scroll detection)
-    setIsHolding(true);
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
-    }
+    // Wait 150ms before showing hold UI - this allows scroll detection first
+    holdDelayTimer.current = setTimeout(() => {
+      if (isScrolling.current) return;
 
-    holdTimer.current = setTimeout(() => {
-      if (!isScrolling.current) {
-        triggerSuccess();
+      // Now show the hold UI
+      setIsHolding(true);
+      if (navigator.vibrate) {
+        navigator.vibrate(10);
       }
-      setIsHolding(false);
-    }, 1500);
+
+      // Start the actual hold timer (1.35s remaining = 1.5s total - 0.15s delay)
+      holdTimer.current = setTimeout(() => {
+        if (!isScrolling.current) {
+          triggerSuccess();
+        }
+        setIsHolding(false);
+      }, 1350);
+    }, 150);
   }, [isComplete, triggerSuccess]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
