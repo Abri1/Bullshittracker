@@ -332,9 +332,6 @@ export default function FieldCard({
                   style={{ filter: `drop-shadow(0 0 10px ${color})` }}
                 />
               </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-4xl">{fieldIcon}</span>
-              </div>
             </div>
           </div>
         )}
