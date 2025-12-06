@@ -49,13 +49,6 @@ const MOTIVATIONAL_QUOTES = [
   "The grind never stops",
 ];
 
-const getStoredStreak = (): { count: number; lastDate: string } => {
-  if (typeof window === 'undefined') return { count: 0, lastDate: '' };
-  const stored = localStorage.getItem('streak');
-  if (stored) return JSON.parse(stored);
-  return { count: 0, lastDate: '' };
-};
-
 const getStoredAchievements = (): string[] => {
   if (typeof window === 'undefined') return [];
   const stored = localStorage.getItem('achievements');
@@ -76,7 +69,6 @@ export default function DashboardPage() {
   const [fields, setFields] = useState<Field[]>([]);
   const [loads, setLoads] = useState<Load[]>([]);
   const [pinnedFields, setPinnedFields] = useState<string[]>([]);
-  const [streak, setStreak] = useState(0);
   const [earnedAchievements, setEarnedAchievements] = useState<string[]>([]);
   const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null);
   const [quote, setQuote] = useState('');
@@ -126,20 +118,6 @@ export default function DashboardPage() {
 
     // Random quote
     setQuote(MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]);
-
-    // Calculate streak
-    const storedStreak = getStoredStreak();
-    const today = new Date().toDateString();
-    const yesterday = new Date(Date.now() - 86400000).toDateString();
-
-    if (storedStreak.lastDate === today) {
-      setStreak(storedStreak.count);
-    } else if (storedStreak.lastDate === yesterday) {
-      setStreak(storedStreak.count);
-    } else if (storedStreak.lastDate) {
-      setStreak(0);
-      localStorage.setItem('streak', JSON.stringify({ count: 0, lastDate: '' }));
-    }
 
     // Fetch initial data
     fetchData().then(() => setIsLoading(false));
@@ -257,21 +235,6 @@ export default function DashboardPage() {
     })).filter(d => d.count > 0);
   }, [loads]);
 
-  const avgLoadsPerHour = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayLoads = loads.filter(l => {
-      const loadDate = new Date(l.created_at);
-      loadDate.setHours(0, 0, 0, 0);
-      return loadDate.getTime() === today.getTime();
-    });
-    if (todayLoads.length < 2) return 0;
-    const timestamps = todayLoads.map(l => new Date(l.created_at).getTime()).sort((a, b) => a - b);
-    const hoursSpan = (timestamps[timestamps.length - 1] - timestamps[0]) / (1000 * 60 * 60);
-    if (hoursSpan < 0.1) return 0;
-    return todayLoads.length / hoursSpan;
-  }, [loads]);
-
   const getDriverStats = useCallback((driver: string) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -315,21 +278,6 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error saving load:', error);
     }
-
-    // Update streak
-    const today = new Date().toDateString();
-    const storedStreak = getStoredStreak();
-    const yesterday = new Date(Date.now() - 86400000).toDateString();
-
-    let newStreakCount = 1;
-    if (storedStreak.lastDate === today) {
-      newStreakCount = storedStreak.count;
-    } else if (storedStreak.lastDate === yesterday) {
-      newStreakCount = storedStreak.count + 1;
-    }
-
-    setStreak(newStreakCount);
-    localStorage.setItem('streak', JSON.stringify({ count: newStreakCount, lastDate: today }));
 
     // Check achievements
     const driverLoadsToday = loads.filter(l => {
@@ -391,14 +339,13 @@ export default function DashboardPage() {
     );
   }
 
+  // Sort fields: pinned first, then by most loads
   const sortedFields = [...fields].sort((a, b) => {
     const aPinned = pinnedFields.includes(a.id);
     const bPinned = pinnedFields.includes(b.id);
     if (aPinned !== bPinned) return aPinned ? -1 : 1;
-    const aComplete = getFieldLoads(a.id) >= a.target_loads;
-    const bComplete = getFieldLoads(b.id) >= b.target_loads;
-    if (aComplete !== bComplete) return aComplete ? 1 : -1;
-    return (a.target_loads - getFieldLoads(a.id)) - (b.target_loads - getFieldLoads(b.id));
+    // Then by most loads (busiest fields first)
+    return getFieldLoads(b.id) - getFieldLoads(a.id);
   });
 
   return (
@@ -418,7 +365,6 @@ export default function DashboardPage() {
       <StatsHeader
         currentDriver={driverName}
         drivers={driversStats}
-        streak={streak}
         quote={quote}
         onSettingsClick={handleSettings}
         onLogout={handleLogout}
@@ -434,10 +380,8 @@ export default function DashboardPage() {
               name={field.name}
               color={field.color}
               currentLoads={getFieldLoads(field.id)}
-              targetLoads={field.target_loads}
               isPinned={pinnedFields.includes(field.id)}
               driverBreakdown={getFieldDriverBreakdown(field.id)}
-              avgLoadsPerHour={avgLoadsPerHour}
               onDump={handleDump}
               onTogglePin={handleTogglePin}
             />

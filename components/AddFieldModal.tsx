@@ -5,8 +5,8 @@ import { useState } from 'react';
 interface AddFieldModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (field: { name: string; color: string; target_loads: number }) => void;
-  editField?: { id: string; name: string; color: string; target_loads: number } | null;
+  onAdd: (field: { name: string; color: string }) => void;
+  editField?: { id: string; name: string; color: string } | null;
   isSaving?: boolean;
 }
 
@@ -24,23 +24,20 @@ const PRESET_COLORS = [
 export default function AddFieldModal({ isOpen, onClose, onAdd, editField, isSaving }: AddFieldModalProps) {
   const [name, setName] = useState(editField?.name || '');
   const [color, setColor] = useState(editField?.color || PRESET_COLORS[0]);
-  const [targetLoads, setTargetLoads] = useState(editField?.target_loads?.toString() || '20');
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !targetLoads || isSaving) return;
+    if (!name.trim() || isSaving) return;
 
     onAdd({
       name: name.trim(),
       color,
-      target_loads: parseInt(targetLoads, 10),
     });
 
     setName('');
     setColor(PRESET_COLORS[0]);
-    setTargetLoads('20');
     onClose();
   };
 
@@ -91,20 +88,6 @@ export default function AddFieldModal({ isOpen, onClose, onAdd, editField, isSav
                 />
               ))}
             </div>
-          </div>
-
-          {/* Target Loads */}
-          <div>
-            <label className="block text-sm text-muted mb-2">Target Loads</label>
-            <input
-              type="number"
-              value={targetLoads}
-              onChange={e => setTargetLoads(e.target.value)}
-              min="1"
-              max="999"
-              className="w-full px-4 py-3 bg-background rounded-xl border border-white/10
-                         focus:border-white/30 focus:outline-none transition-colors"
-            />
           </div>
 
           {/* Actions */}

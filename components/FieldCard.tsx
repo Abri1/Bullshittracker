@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 interface DriverBreakdown {
   name: string;
@@ -12,10 +12,8 @@ interface FieldCardProps {
   name: string;
   color: string;
   currentLoads: number;
-  targetLoads: number;
   isPinned: boolean;
   driverBreakdown: DriverBreakdown[];
-  avgLoadsPerHour: number;
   onDump: (fieldId: string) => void;
   onTogglePin: (fieldId: string) => void;
 }
@@ -39,78 +37,19 @@ export default function FieldCard({
   name,
   color,
   currentLoads,
-  targetLoads,
   isPinned,
   driverBreakdown,
-  avgLoadsPerHour,
   onDump,
   onTogglePin,
 }: FieldCardProps) {
   const [isHolding, setIsHolding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [animatedProgress, setAnimatedProgress] = useState(0);
   const holdTimer = useRef<NodeJS.Timeout | null>(null);
   const holdDelayTimer = useRef<NodeJS.Timeout | null>(null);
-  const progressRef = useRef<SVGCircleElement>(null);
-  const prevLoads = useRef(currentLoads);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const isScrolling = useRef(false);
 
-  const progress = Math.min((currentLoads / targetLoads) * 100, 100);
-  const isComplete = currentLoads >= targetLoads;
-  const loadsRemaining = Math.max(0, targetLoads - currentLoads);
   const fieldIcon = getFieldIcon(name);
-
-  // Animate progress bar
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setAnimatedProgress(progress);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [progress]);
-
-  // Calculate ETA
-  const etaText = (() => {
-    if (isComplete || avgLoadsPerHour === 0 || loadsRemaining === 0) return null;
-    const hoursRemaining = loadsRemaining / avgLoadsPerHour;
-    if (hoursRemaining < 1) {
-      return `~${Math.round(hoursRemaining * 60)}min left`;
-    } else if (hoursRemaining < 24) {
-      return `~${hoursRemaining.toFixed(1)}h left`;
-    }
-    return null;
-  })();
-
-  // Detect completion
-  useEffect(() => {
-    if (currentLoads >= targetLoads && prevLoads.current < targetLoads) {
-      setShowCelebration(true);
-      playCelebrationSound();
-      if (navigator.vibrate) {
-        navigator.vibrate([100, 50, 100, 50, 200]);
-      }
-      setTimeout(() => setShowCelebration(false), 3000);
-    }
-    prevLoads.current = currentLoads;
-  }, [currentLoads, targetLoads]);
-
-  const playCelebrationSound = () => {
-    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    const notes = [523.25, 659.25, 783.99, 1046.50];
-    notes.forEach((freq, i) => {
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      osc.connect(gain);
-      gain.connect(audioContext.destination);
-      osc.frequency.value = freq;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.3, audioContext.currentTime + i * 0.15);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.15 + 0.3);
-      osc.start(audioContext.currentTime + i * 0.15);
-      osc.stop(audioContext.currentTime + i * 0.15 + 0.3);
-    });
-  };
 
   const playSound = useCallback(() => {
     const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
@@ -163,24 +102,19 @@ export default function FieldCard({
   }, []);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (isComplete) return;
-
-    // Store touch start position
     const touch = e.touches[0];
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
     isScrolling.current = false;
 
-    // Wait 150ms before showing hold UI - this allows scroll detection first
+    // Wait 150ms before showing hold UI
     holdDelayTimer.current = setTimeout(() => {
       if (isScrolling.current) return;
 
-      // Now show the hold UI
       setIsHolding(true);
       if (navigator.vibrate) {
         navigator.vibrate(10);
       }
 
-      // Start the actual hold timer (1.35s remaining = 1.5s total - 0.15s delay)
       holdTimer.current = setTimeout(() => {
         if (!isScrolling.current) {
           triggerSuccess();
@@ -188,7 +122,7 @@ export default function FieldCard({
         setIsHolding(false);
       }, 1350);
     }, 150);
-  }, [isComplete, triggerSuccess]);
+  }, [triggerSuccess]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!touchStartPos.current) return;
@@ -197,7 +131,6 @@ export default function FieldCard({
     const deltaX = Math.abs(touch.clientX - touchStartPos.current.x);
     const deltaY = Math.abs(touch.clientY - touchStartPos.current.y);
 
-    // If finger moved more than 10px, user is scrolling - cancel hold
     if (deltaX > 10 || deltaY > 10) {
       isScrolling.current = true;
       cancelHold();
@@ -209,7 +142,6 @@ export default function FieldCard({
   }, [cancelHold]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (isComplete) return;
     e.preventDefault();
     setIsHolding(true);
     if (navigator.vibrate) {
@@ -219,7 +151,7 @@ export default function FieldCard({
       triggerSuccess();
       setIsHolding(false);
     }, 1500);
-  }, [isComplete, triggerSuccess]);
+  }, [triggerSuccess]);
 
   const handleMouseUp = useCallback(() => {
     cancelHold();
@@ -227,9 +159,9 @@ export default function FieldCard({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-3xl transition-all duration-500 ${
-        isComplete ? 'opacity-70' : ''
-      } ${!isComplete && !isHolding ? 'animate-subtle-glow' : ''}`}
+      className={`relative overflow-hidden rounded-3xl transition-all duration-300 ${
+        !isHolding ? 'animate-subtle-glow' : ''
+      }`}
       style={{
         background: `linear-gradient(135deg, ${color}20 0%, ${color}10 50%, ${color}05 100%)`,
         borderWidth: '1px',
@@ -241,23 +173,21 @@ export default function FieldCard({
       }}
     >
       {/* Animated particles background */}
-      {!isComplete && (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 rounded-full opacity-30 animate-float"
-              style={{
-                backgroundColor: color,
-                left: `${15 + i * 15}%`,
-                top: `${20 + (i % 3) * 25}%`,
-                animationDelay: `${i * 0.5}s`,
-                animationDuration: `${3 + i * 0.5}s`,
-              }}
-            />
-          ))}
-        </div>
-      )}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 rounded-full opacity-30 animate-float"
+            style={{
+              backgroundColor: color,
+              left: `${15 + i * 15}%`,
+              top: `${20 + (i % 3) * 25}%`,
+              animationDelay: `${i * 0.5}s`,
+              animationDuration: `${3 + i * 0.5}s`,
+            }}
+          />
+        ))}
+      </div>
 
       {/* Gradient overlay for depth */}
       <div
@@ -266,27 +196,6 @@ export default function FieldCard({
           background: `radial-gradient(ellipse at top right, ${color}15 0%, transparent 50%)`,
         }}
       />
-
-      {/* Celebration confetti overlay */}
-      {showCelebration && (
-        <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-3 h-3 animate-confetti"
-              style={{
-                left: `${Math.random() * 100}%`,
-                backgroundColor: ['#ff0', '#f0f', '#0ff', '#0f0', '#f00'][i % 5],
-                animationDelay: `${Math.random() * 0.5}s`,
-                transform: `rotate(${Math.random() * 360}deg)`,
-              }}
-            />
-          ))}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-6xl animate-bounce">🎉</span>
-          </div>
-        </div>
-      )}
 
       {/* Pin button */}
       <button
@@ -329,7 +238,6 @@ export default function FieldCard({
               <svg className="w-32 h-32 -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="45" fill="none" stroke={`${color}30`} strokeWidth="4" />
                 <circle
-                  ref={progressRef}
                   cx="50"
                   cy="50"
                   r="45"
@@ -367,66 +275,36 @@ export default function FieldCard({
         {/* Card content */}
         <div className={`relative transition-all duration-300 ${isHolding ? 'scale-95 opacity-50' : ''}`}>
           {/* Header with icon and name */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
-                style={{
-                  background: `linear-gradient(135deg, ${color}40 0%, ${color}20 100%)`,
-                  boxShadow: `0 4px 15px -5px ${color}50`,
-                }}
-              >
-                {fieldIcon}
-              </div>
-              <div>
-                <h2 className="text-xl font-bold">{name}</h2>
-                <p className="text-muted text-sm">
-                  {isComplete ? '✓ Complete!' : 'Hold to dump'}
-                </p>
-              </div>
+          <div className="flex items-center gap-3 mb-4">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
+              style={{
+                background: `linear-gradient(135deg, ${color}40 0%, ${color}20 100%)`,
+                boxShadow: `0 4px 15px -5px ${color}50`,
+              }}
+            >
+              {fieldIcon}
             </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="mb-4">
-            <div className="h-4 bg-black/30 rounded-full overflow-hidden backdrop-blur-sm">
-              <div
-                className="h-full rounded-full transition-all duration-700 ease-out relative"
-                style={{
-                  width: `${animatedProgress}%`,
-                  background: isComplete
-                    ? 'linear-gradient(90deg, #22c55e, #16a34a)'
-                    : `linear-gradient(90deg, ${color}, ${color}cc)`,
-                  boxShadow: isComplete ? '0 0 20px #22c55e50' : `0 0 20px ${color}50`,
-                }}
-              >
-                {/* Shimmer effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
-              </div>
+            <div>
+              <h2 className="text-xl font-bold">{name}</h2>
+              <p className="text-muted text-sm">Hold to dump</p>
             </div>
           </div>
 
           {/* Stats row */}
           <div className="flex items-end justify-between">
             <div>
-              <div className="flex items-baseline gap-2">
-                <span
-                  className="text-4xl font-black"
-                  style={{
-                    background: `linear-gradient(135deg, white 0%, ${color} 100%)`,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
-                  {currentLoads}
-                </span>
-                <span className="text-muted text-lg">/ {targetLoads}</span>
-              </div>
-              {etaText && (
-                <p className="text-muted text-xs mt-1 flex items-center gap-1">
-                  <span>⏱️</span> {etaText}
-                </p>
-              )}
+              <span
+                className="text-5xl font-black"
+                style={{
+                  background: `linear-gradient(135deg, white 0%, ${color} 100%)`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                {currentLoads}
+              </span>
+              <span className="text-muted text-lg ml-2">loads</span>
             </div>
 
             {/* Driver breakdown */}

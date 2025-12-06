@@ -9,7 +9,6 @@ interface DriverStats {
 interface StatsHeaderProps {
   currentDriver: string;
   drivers: DriverStats[];
-  streak: number;
   quote: string;
   onSettingsClick: () => void;
   onLogout: () => void;
@@ -24,7 +23,6 @@ const DRIVER_EMOJI: Record<string, string> = {
 export default function StatsHeader({
   currentDriver,
   drivers,
-  streak,
   quote,
   onSettingsClick,
   onLogout,
@@ -71,15 +69,6 @@ export default function StatsHeader({
           <p className="text-sm text-amber-200/80 italic text-center">
             &ldquo;{quote}&rdquo;
           </p>
-        </div>
-
-        {/* Streak counter */}
-        <div className="mb-3 px-4 py-3 rounded-2xl bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/20 flex items-center justify-center gap-3">
-          <span className="text-2xl">🔥</span>
-          <div>
-            <p className="text-xs text-orange-300/70">Current Streak</p>
-            <p className="font-bold text-lg text-orange-300">{streak} days</p>
-          </div>
         </div>
 
         {/* Driver stats - head to head */}

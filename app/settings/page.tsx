@@ -9,7 +9,6 @@ interface Field {
   id: string;
   name: string;
   color: string;
-  target_loads: number;
   is_active: boolean;
 }
 
@@ -48,7 +47,7 @@ export default function SettingsPage() {
     fetchFields();
   }, [router]);
 
-  const handleAddField = async (field: { name: string; color: string; target_loads: number }) => {
+  const handleAddField = async (field: { name: string; color: string }) => {
     setIsSaving(true);
 
     try {
@@ -59,7 +58,6 @@ export default function SettingsPage() {
           .update({
             name: field.name,
             color: field.color,
-            target_loads: field.target_loads,
           })
           .eq('id', editingField.id)
           .select()
@@ -70,13 +68,13 @@ export default function SettingsPage() {
         setFields(prev => prev.map(f => f.id === editingField.id ? data : f));
         setEditingField(null);
       } else {
-        // Add new field
+        // Add new field (target_loads defaults in DB or we set a placeholder)
         const { data, error } = await supabase
           .from('fields')
           .insert({
             name: field.name,
             color: field.color,
-            target_loads: field.target_loads,
+            target_loads: 999, // Not used but required by DB
             is_active: true,
           })
           .select()
@@ -171,7 +169,6 @@ export default function SettingsPage() {
                 />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium truncate">{field.name}</h3>
-                  <p className="text-muted text-sm">Target: {field.target_loads} loads</p>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -206,9 +203,8 @@ export default function SettingsPage() {
         <section className="mt-8 p-4 bg-card rounded-2xl">
           <h3 className="font-semibold mb-2">How it works</h3>
           <ul className="text-muted text-sm space-y-2">
-            <li>• Press and hold a field card for 2 seconds to log a dump</li>
-            <li>• Fields turn green when they reach their target</li>
-            <li>• Use the undo button if you make a mistake</li>
+            <li>• Press and hold a field card for 1.5 seconds to log a dump</li>
+            <li>• Swipe left on activity log entries to delete</li>
             <li>• Data syncs in real-time between devices</li>
           </ul>
         </section>
