@@ -22,7 +22,7 @@ export default function PinPad({ driverName, onSuccess, onBack }: PinPadProps) {
     if (pin.length === 4) {
       setIsChecking(true);
 
-      // Verify PIN against Supabase using direct REST API
+      // Verify PIN via server-side API
       const verifyPin = async () => {
         const fallbackPins: Record<string, string> = {
           'ABRI': '1234',
@@ -30,37 +30,17 @@ export default function PinPad({ driverName, onSuccess, onBack }: PinPadProps) {
         };
 
         try {
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-          const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-          if (!supabaseUrl || !supabaseKey) {
-            throw new Error('Missing Supabase config');
-          }
-
-          // Use direct REST API call to Supabase
-          const response = await fetch(
-            `${supabaseUrl}/rest/v1/drivers?name=eq.${encodeURIComponent(driverName)}&select=pin`,
-            {
-              method: 'GET',
-              headers: {
-                'apikey': supabaseKey,
-                'Authorization': `Bearer ${supabaseKey}`,
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch');
-          }
+          const response = await fetch('/api/verify-pin', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ driverName, pin }),
+          });
 
           const data = await response.json();
-          console.log('PIN verification response:', data);
 
-          // Get the correct PIN from DB or fallback
-          const correctPin = data?.[0]?.pin || fallbackPins[driverName];
-
-          if (pin === correctPin) {
+          if (data.success) {
             localStorage.setItem('driver', driverName);
             if (navigator.vibrate) {
               navigator.vibrate([50, 30, 100]);
@@ -71,7 +51,7 @@ export default function PinPad({ driverName, onSuccess, onBack }: PinPadProps) {
           }
         } catch (err) {
           console.error('PIN verification error:', err);
-          // Fallback to hardcoded PINs
+          // Fallback to hardcoded PINs if server unavailable
           if (pin === fallbackPins[driverName]) {
             localStorage.setItem('driver', driverName);
             if (navigator.vibrate) {
