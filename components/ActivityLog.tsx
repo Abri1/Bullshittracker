@@ -18,12 +18,30 @@ interface ActivityLogProps {
   currentDriver: string;
 }
 
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString('en-US', {
+function formatDateTime(date: Date): { date: string; time: string } {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const timeStr = date.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
   });
+
+  let dateStr: string;
+  if (date.toDateString() === today.toDateString()) {
+    dateStr = 'Today';
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    dateStr = 'Yesterday';
+  } else {
+    dateStr = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+  }
+
+  return { date: dateStr, time: timeStr };
 }
 
 function formatDate(date: Date): string {
@@ -178,10 +196,11 @@ function SwipeableRow({
           </div>
         </div>
 
-        {/* Time */}
-        <span className="text-sm text-muted flex-shrink-0">
-          {formatTime(activity.timestamp)}
-        </span>
+        {/* Date & Time */}
+        <div className="text-right flex-shrink-0">
+          <span className="text-xs text-muted block">{formatDateTime(activity.timestamp).date}</span>
+          <span className="text-sm text-muted">{formatDateTime(activity.timestamp).time}</span>
+        </div>
 
         {/* Swipe hint for own entries */}
         {canDelete && translateX === 0 && (
