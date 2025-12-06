@@ -76,9 +76,16 @@ html, body {
   overscroll-behavior-y: none;
 }
 
-/* Native-like scrollbar (hidden on iOS anyway) */
-::-webkit-scrollbar {
-  display: none;
+/* Hide scrollbar for native app feel */
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+*::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+  width: 0;
+  height: 0;
 }
 
 /* Active state for buttons - native feel */
