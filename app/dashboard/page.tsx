@@ -409,7 +409,7 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="min-h-screen pb-32 bg-gradient-to-b from-background via-background to-amber-950/5 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className="page-container pb-32 bg-gradient-to-b from-background via-background to-amber-950/5 page-enter">
       {/* Offline indicator */}
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-orange-500/90 text-white text-center py-2 text-sm">

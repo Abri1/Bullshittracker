@@ -131,9 +131,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-white/5">
+    <div className="page-container page-enter">
+      {/* Header - iOS style sticky header */}
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-white/5 safe-area-top">
         <div className="px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.push('/dashboard')}
