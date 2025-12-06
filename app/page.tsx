@@ -1,65 +1,146 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import DriverSelect from '@/components/DriverSelect';
+import PinPad from '@/components/PinPad';
+
+const TAGLINES = [
+  "Because every load counts",
+  "Spreading joy, one dump at a time",
+  "Making fields great again",
+  "Where the magic happens",
+  "Hauling ass since day one",
+  "No load left behind",
+  "Professional shit disturbers",
+  "Turning crap into gold",
+  "The #1 app for #2",
+  "Dump. Track. Repeat.",
+];
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [tagline, setTagline] = useState('');
+
+  useEffect(() => {
+    // Pick a random tagline
+    setTagline(TAGLINES[Math.floor(Math.random() * TAGLINES.length)]);
+
+    // Check if already logged in
+    const driver = localStorage.getItem('driver');
+    if (driver) {
+      router.push('/dashboard');
+    } else {
+      setIsLoading(false);
+    }
+  }, [router]);
+
+  const handleDriverSelect = (name: string) => {
+    setSelectedDriver(name);
+  };
+
+  const handlePinSuccess = () => {
+    router.push('/dashboard');
+  };
+
+  const handleBack = () => {
+    setSelectedDriver(null);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-amber-950/20">
+        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background via-background to-amber-950/20 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-20 -left-20 w-40 h-40 bg-amber-500/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-amber-600/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 right-10 text-6xl opacity-10 rotate-12">💩</div>
+        <div className="absolute bottom-1/4 left-10 text-4xl opacity-10 -rotate-12">🐄</div>
+        <div className="absolute top-1/3 left-1/4 text-3xl opacity-5">🚜</div>
+      </div>
+
+      {/* Main content */}
+      <div className="relative z-10 w-full max-w-sm">
+        {selectedDriver ? (
+          <PinPad
+            driverName={selectedDriver}
+            onSuccess={handlePinSuccess}
+            onBack={handleBack}
+          />
+        ) : (
+          <>
+            {/* Logo & Title */}
+            <div className="text-center mb-10">
+              {/* Poop emoji with glow */}
+              <div className="relative inline-block mb-4">
+                <span className="text-7xl animate-bounce inline-block" style={{ animationDuration: '2s' }}>
+                  💩
+                </span>
+                <div className="absolute inset-0 text-7xl blur-xl opacity-30">💩</div>
+              </div>
+
+              <h1 className="text-5xl font-black tracking-tighter mb-2 bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
+                BULLSHIT
+              </h1>
+              <p className="text-xl font-medium text-amber-500/80 tracking-wide">
+                TRACKER
+              </p>
+
+              {/* Tagline */}
+              <p className="mt-4 text-muted text-sm italic">
+                &ldquo;{tagline}&rdquo;
+              </p>
+            </div>
+
+            {/* Cow ASCII art - subtle */}
+            <div className="text-center mb-8 font-mono text-xs text-white/10 leading-tight hidden sm:block">
+              <pre>{`
+        (__)
+        (oo)
+  /------\\/
+ / |    ||
+*  /\\---/\\
+   ~~   ~~
+              `}</pre>
+            </div>
+
+            {/* Driver selection */}
+            <DriverSelect onSelect={handleDriverSelect} />
+
+            {/* Fun stats */}
+            <div className="mt-10 pt-6 border-t border-white/5">
+              <div className="flex justify-center gap-8 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-amber-400">∞</p>
+                  <p className="text-xs text-muted">Loads of fun</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-amber-400">100%</p>
+                  <p className="text-xs text-muted">Organic</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-amber-400">2</p>
+                  <p className="text-xs text-muted">Legends</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <p className="text-center text-muted/50 text-xs mt-8">
+              Made with 💩 by Abri & Heine
+            </p>
+          </>
+        )}
+      </div>
+    </main>
   );
 }
