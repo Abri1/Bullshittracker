@@ -30,7 +30,6 @@
 
 html {
   touch-action: manipulation;
-  overflow: hidden;
   height: 100%;
   height: -webkit-fill-available;
 }
@@ -42,8 +41,9 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
-  overscroll-behavior: none;
   overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   /* iOS safe areas */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
