@@ -1,8 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,20 +8,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing data' }, { status: 400 });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    const { data, error } = await supabase
-      .from('drivers')
-      .select('pin')
-      .eq('name', driverName)
-      .single();
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing env vars:', { supabaseUrl: !!supabaseUrl, supabaseKey: !!supabaseKey });
+      return NextResponse.json({ success: false, error: 'Server config error' }, { status: 500 });
+    }
 
-    if (error) {
-      console.error('Supabase error:', error);
+    // Use direct fetch to Supabase REST API
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/drivers?name=eq.${encodeURIComponent(driverName)}&select=pin`,
+      {
+        method: 'GET',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Supabase fetch error:', response.status, errorText);
       return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
     }
 
-    if (data && data.pin === pin) {
+    const data = await response.json();
+    console.log('Supabase response:', data);
+
+    const correctPin = data?.[0]?.pin;
+
+    if (correctPin && correctPin === pin) {
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json({ success: false, error: 'Invalid PIN' }, { status: 401 });
