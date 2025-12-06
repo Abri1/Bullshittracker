@@ -30,16 +30,15 @@ export default function DriverSelect({ onSelect }: DriverSelectProps) {
           <button
             key={name}
             onClick={() => onSelect(name)}
-            className={`flex-1 py-6 px-4 rounded-3xl text-center
+            className={`flex-1 py-8 px-4 rounded-3xl text-center
                        bg-gradient-to-br ${config.color}
-                       transition-all duration-300
-                       active:scale-95 hover:scale-105
-                       shadow-lg ${config.shadow}
-                       hover:shadow-xl`}
+                       transition-all duration-150
+                       active:scale-95
+                       shadow-lg ${config.shadow}`}
           >
-            <span className="text-4xl block mb-2">{config.emoji}</span>
-            <span className="text-xl font-bold block text-white">{name}</span>
-            <span className="text-xs text-white/70 block mt-1">{config.subtitle}</span>
+            <span className="text-5xl block mb-3">{config.emoji}</span>
+            <span className="text-2xl font-bold block text-white">{name}</span>
+            <span className="text-sm text-white/70 block mt-1">{config.subtitle}</span>
           </button>
         ))}
       </div>

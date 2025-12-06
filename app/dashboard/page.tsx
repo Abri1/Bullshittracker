@@ -155,7 +155,14 @@ export default function DashboardPage() {
         { event: '*', schema: 'public', table: 'loads' },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setLoads(prev => [...prev, payload.new as Load]);
+            const newLoad = payload.new as Load;
+            // Only add if not already in the list (prevents duplicates from optimistic updates)
+            setLoads(prev => {
+              if (prev.some(l => l.id === newLoad.id)) {
+                return prev;
+              }
+              return [...prev, newLoad];
+            });
           } else if (payload.eventType === 'DELETE') {
             setLoads(prev => prev.filter(l => l.id !== payload.old.id));
           }
@@ -294,36 +301,20 @@ export default function DashboardPage() {
   }, [loads, fields]);
 
   const handleDump = useCallback(async (fieldId: string) => {
-    // Optimistically add the load locally
-    const tempId = crypto.randomUUID();
-    const newLoad: Load = {
-      id: tempId,
-      field_id: fieldId,
-      driver: driverName,
-      created_at: new Date().toISOString(),
-    };
-
-    setLoads(prev => [...prev, newLoad]);
-
-    // Save to Supabase
+    // Insert to Supabase - real-time subscription will add the load to state
+    // This prevents the duplicate bug caused by race condition between
+    // optimistic updates and real-time subscription
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('loads')
         .insert({
           field_id: fieldId,
           driver: driverName,
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
-
-      // Replace temp load with real one
-      setLoads(prev => prev.map(l => l.id === tempId ? data : l));
     } catch (error) {
       console.error('Error saving load:', error);
-      // Revert on error
-      setLoads(prev => prev.filter(l => l.id !== tempId));
     }
 
     // Update streak
@@ -418,7 +409,7 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="min-h-screen pb-24 bg-gradient-to-b from-background via-background to-amber-950/5">
+    <div className="min-h-screen pb-32 bg-gradient-to-b from-background via-background to-amber-950/5 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
       {/* Offline indicator */}
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-orange-500/90 text-white text-center py-2 text-sm">

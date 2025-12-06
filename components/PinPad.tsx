@@ -130,7 +130,7 @@ export default function PinPad({ driverName, onSuccess, onBack }: PinPadProps) {
       </div>
 
       {/* Number pad */}
-      <div className="grid grid-cols-3 gap-3 w-full max-w-xs">
+      <div className="grid grid-cols-3 gap-4 w-full max-w-sm px-4">
         {digits.map((digit, i) => (
           digit === '' ? (
             <div key={i} />
@@ -138,8 +138,8 @@ export default function PinPad({ driverName, onSuccess, onBack }: PinPadProps) {
             <button
               key={i}
               onClick={handleDelete}
-              className="py-5 text-xl font-medium text-muted
-                         transition-all active:scale-95 hover:text-white"
+              className="h-16 text-2xl font-medium text-muted
+                         transition-all active:scale-95 active:text-white"
             >
               ⌫
             </button>
@@ -147,9 +147,9 @@ export default function PinPad({ driverName, onSuccess, onBack }: PinPadProps) {
             <button
               key={i}
               onClick={() => handleDigit(digit)}
-              className="py-5 bg-white/5 hover:bg-white/10 rounded-2xl text-2xl font-semibold
-                         transition-all duration-150 active:scale-90 active:bg-white/20
-                         border border-white/5 hover:border-white/10"
+              className="h-16 bg-white/5 active:bg-white/20 rounded-2xl text-3xl font-semibold
+                         transition-all duration-100 active:scale-95
+                         border border-white/10"
             >
               {digit}
             </button>

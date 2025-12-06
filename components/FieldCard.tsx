@@ -145,19 +145,23 @@ export default function FieldCard({
     onDump(id);
   }, [id, onDump, playSound]);
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     if (isComplete) return;
+    // Prevent default to stop iOS context menu and scrolling
+    e.preventDefault();
     setIsHolding(true);
     if (navigator.vibrate) {
       navigator.vibrate(10);
     }
+    // 1.5 seconds for better mobile UX
     holdTimer.current = setTimeout(() => {
       triggerSuccess();
       setIsHolding(false);
-    }, 2000);
+    }, 1500);
   }, [isComplete, triggerSuccess]);
 
-  const handleEnd = useCallback(() => {
+  const handleEnd = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
     if (holdTimer.current) {
       clearTimeout(holdTimer.current);
       holdTimer.current = null;
@@ -253,7 +257,8 @@ export default function FieldCard({
 
       {/* Hold area */}
       <div
-        className="relative p-6"
+        className="relative p-6 select-none"
+        style={{ touchAction: 'none' }}
         onMouseDown={handleStart}
         onMouseUp={handleEnd}
         onMouseLeave={handleEnd}
