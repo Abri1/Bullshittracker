@@ -61,7 +61,7 @@ function groupByDate(activities: ActivityItem[]): Map<string, ActivityItem[]> {
   return groups;
 }
 
-// Swipeable row component
+// Swipeable row component - iOS style: swipe to reveal, tap to delete
 function SwipeableRow({
   activity,
   onDelete,
@@ -72,6 +72,7 @@ function SwipeableRow({
   canDelete: boolean;
 }) {
   const [translateX, setTranslateX] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const startX = useRef(0);
   const currentX = useRef(0);
@@ -88,28 +89,49 @@ function SwipeableRow({
     if (!isDragging.current || !canDelete) return;
     currentX.current = e.touches[0].clientX;
     const diff = currentX.current - startX.current;
-    // Only allow swiping left (negative values)
-    if (diff < 0) {
-      setTranslateX(Math.max(diff, -100));
+
+    // If already open, allow swiping right to close
+    if (isOpen) {
+      const newX = Math.min(0, Math.max(-80, -80 + diff));
+      setTranslateX(newX);
+    } else {
+      // Only allow swiping left (negative values)
+      if (diff < 0) {
+        setTranslateX(Math.max(diff, -80));
+      }
     }
-  }, [canDelete]);
+  }, [canDelete, isOpen]);
 
   const handleTouchEnd = useCallback(() => {
     if (!isDragging.current || !canDelete) return;
     isDragging.current = false;
 
-    // If swiped more than 80px, delete
-    if (translateX < -80) {
-      setIsDeleting(true);
-      setTranslateX(-400); // Animate off screen
-      setTimeout(() => {
-        onDelete(activity.id);
-      }, 200);
+    // If swiped more than 40px, snap to open position
+    if (translateX < -40) {
+      setTranslateX(-80);
+      setIsOpen(true);
     } else {
-      // Snap back
+      // Snap back closed
       setTranslateX(0);
+      setIsOpen(false);
     }
-  }, [translateX, onDelete, activity.id, canDelete]);
+  }, [translateX, canDelete]);
+
+  const handleDelete = useCallback(() => {
+    setIsDeleting(true);
+    setTranslateX(-400);
+    if (navigator.vibrate) {
+      navigator.vibrate([50, 30, 50]);
+    }
+    setTimeout(() => {
+      onDelete(activity.id);
+    }, 200);
+  }, [onDelete, activity.id]);
+
+  const handleClose = useCallback(() => {
+    setTranslateX(0);
+    setIsOpen(false);
+  }, []);
 
   if (isDeleting) {
     return (
@@ -121,25 +143,25 @@ function SwipeableRow({
 
   return (
     <div className="relative overflow-hidden rounded-xl">
-      {/* Delete background */}
-      <div
-        className="absolute inset-y-0 right-0 bg-danger flex items-center justify-end px-4 rounded-xl"
-        style={{ width: '100px' }}
+      {/* Delete button - tap to confirm */}
+      <button
+        onClick={handleDelete}
+        className="absolute inset-y-0 right-0 bg-danger flex items-center justify-center rounded-xl active:bg-red-700 transition-colors"
+        style={{ width: '80px' }}
       >
-        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      </div>
+        <span className="text-white text-sm font-medium">Delete</span>
+      </button>
 
       {/* Swipeable content */}
       <div
-        className={`relative flex items-center gap-3 bg-card p-3 transition-transform ${
-          isDragging.current ? '' : 'duration-200'
+        className={`relative flex items-center gap-3 bg-card p-3 ${
+          isDragging.current ? '' : 'transition-transform duration-200'
         }`}
         style={{ transform: `translateX(${translateX}px)` }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onClick={isOpen ? handleClose : undefined}
       >
         {/* Field color dot */}
         <div
@@ -195,7 +217,7 @@ export default function ActivityLog({ isOpen, onClose, activities, onDelete, cur
 
       {/* Swipe hint */}
       <div className="px-4 py-2 text-center text-muted text-xs">
-        Swipe left on your own entries to delete
+        Swipe left on your entries, then tap Delete
       </div>
 
       {/* Activity list */}
