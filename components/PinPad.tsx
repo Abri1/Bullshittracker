@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 
 interface PinPadProps {
   driverName: string;
@@ -23,51 +22,56 @@ export default function PinPad({ driverName, onSuccess, onBack }: PinPadProps) {
     if (pin.length === 4) {
       setIsChecking(true);
 
-      // Verify PIN against Supabase
+      // Verify PIN against Supabase using direct REST API
       const verifyPin = async () => {
-        // Fallback PINs for offline mode
         const fallbackPins: Record<string, string> = {
           'ABRI': '1234',
           'HEINE': '5678',
         };
 
         try {
-          const { data, error: dbError } = await supabase
-            .from('drivers')
-            .select('pin')
-            .ilike('name', driverName)
-            .single();
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+          const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-          console.log('Supabase response:', { data, dbError, driverName });
-
-          // Check if PIN matches (from DB or fallback)
-          const correctPin = data?.pin || fallbackPins[driverName];
-
-          if (dbError) {
-            console.error('Supabase error:', dbError);
+          if (!supabaseUrl || !supabaseKey) {
+            throw new Error('Missing Supabase config');
           }
 
+          // Use direct REST API call to Supabase
+          const response = await fetch(
+            `${supabaseUrl}/rest/v1/drivers?name=eq.${encodeURIComponent(driverName)}&select=pin`,
+            {
+              method: 'GET',
+              headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch');
+          }
+
+          const data = await response.json();
+          console.log('PIN verification response:', data);
+
+          // Get the correct PIN from DB or fallback
+          const correctPin = data?.[0]?.pin || fallbackPins[driverName];
+
           if (pin === correctPin) {
-            // Success!
             localStorage.setItem('driver', driverName);
             if (navigator.vibrate) {
               navigator.vibrate([50, 30, 100]);
             }
             onSuccess();
           } else {
-            setError(true);
-            if (navigator.vibrate) {
-              navigator.vibrate([100, 50, 100]);
-            }
-            setTimeout(() => {
-              setPin('');
-              setError(false);
-              setIsChecking(false);
-            }, 500);
+            showError();
           }
         } catch (err) {
           console.error('PIN verification error:', err);
-          // Fallback to hardcoded PINs if offline
+          // Fallback to hardcoded PINs
           if (pin === fallbackPins[driverName]) {
             localStorage.setItem('driver', driverName);
             if (navigator.vibrate) {
@@ -75,17 +79,21 @@ export default function PinPad({ driverName, onSuccess, onBack }: PinPadProps) {
             }
             onSuccess();
           } else {
-            setError(true);
-            if (navigator.vibrate) {
-              navigator.vibrate([100, 50, 100]);
-            }
-            setTimeout(() => {
-              setPin('');
-              setError(false);
-              setIsChecking(false);
-            }, 500);
+            showError();
           }
         }
+      };
+
+      const showError = () => {
+        setError(true);
+        if (navigator.vibrate) {
+          navigator.vibrate([100, 50, 100]);
+        }
+        setTimeout(() => {
+          setPin('');
+          setError(false);
+          setIsChecking(false);
+        }, 500);
       };
 
       verifyPin();
