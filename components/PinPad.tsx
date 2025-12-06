@@ -25,14 +25,36 @@ export default function PinPad({ driverName, onSuccess, onBack }: PinPadProps) {
 
       // Verify PIN against Supabase
       const verifyPin = async () => {
+        // Fallback PINs for offline mode
+        const fallbackPins: Record<string, string> = {
+          'ABRI': '1234',
+          'HEINE': '5678',
+        };
+
         try {
           const { data, error: dbError } = await supabase
             .from('drivers')
             .select('pin')
-            .eq('name', driverName)
+            .ilike('name', driverName)
             .single();
 
-          if (dbError || !data || data.pin !== pin) {
+          console.log('Supabase response:', { data, dbError, driverName });
+
+          // Check if PIN matches (from DB or fallback)
+          const correctPin = data?.pin || fallbackPins[driverName];
+
+          if (dbError) {
+            console.error('Supabase error:', dbError);
+          }
+
+          if (pin === correctPin) {
+            // Success!
+            localStorage.setItem('driver', driverName);
+            if (navigator.vibrate) {
+              navigator.vibrate([50, 30, 100]);
+            }
+            onSuccess();
+          } else {
             setError(true);
             if (navigator.vibrate) {
               navigator.vibrate([100, 50, 100]);
@@ -42,21 +64,10 @@ export default function PinPad({ driverName, onSuccess, onBack }: PinPadProps) {
               setError(false);
               setIsChecking(false);
             }, 500);
-          } else {
-            // Success!
-            localStorage.setItem('driver', driverName);
-            if (navigator.vibrate) {
-              navigator.vibrate([50, 30, 100]);
-            }
-            onSuccess();
           }
-        } catch {
+        } catch (err) {
+          console.error('PIN verification error:', err);
           // Fallback to hardcoded PINs if offline
-          const fallbackPins: Record<string, string> = {
-            'ABRI': '1234',
-            'HEINE': '5678',
-          };
-
           if (pin === fallbackPins[driverName]) {
             localStorage.setItem('driver', driverName);
             if (navigator.vibrate) {

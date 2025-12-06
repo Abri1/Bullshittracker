@@ -58,7 +58,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background via-background to-amber-950/20 relative overflow-hidden">
+    <main className="h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background via-background to-amber-950/20 relative overflow-hidden">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -left-20 w-40 h-40 bg-amber-500/5 rounded-full blur-3xl" />
