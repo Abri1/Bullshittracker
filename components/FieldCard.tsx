@@ -53,6 +53,8 @@ export default function FieldCard({
   const holdTimer = useRef<NodeJS.Timeout | null>(null);
   const progressRef = useRef<SVGCircleElement>(null);
   const prevLoads = useRef(currentLoads);
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
+  const isScrolling = useRef(false);
 
   const progress = Math.min((currentLoads / targetLoads) * 100, 100);
   const isComplete = currentLoads >= targetLoads;
@@ -145,29 +147,72 @@ export default function FieldCard({
     onDump(id);
   }, [id, onDump, playSound]);
 
-  const handleStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+  const cancelHold = useCallback(() => {
+    if (holdTimer.current) {
+      clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+    }
+    setIsHolding(false);
+    touchStartPos.current = null;
+    isScrolling.current = false;
+  }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (isComplete) return;
-    // Prevent default to stop iOS context menu and scrolling
+
+    // Store touch start position
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    isScrolling.current = false;
+
+    // Start hold timer - but don't prevent default yet (allow scroll detection)
+    setIsHolding(true);
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+
+    holdTimer.current = setTimeout(() => {
+      if (!isScrolling.current) {
+        triggerSuccess();
+      }
+      setIsHolding(false);
+    }, 1500);
+  }, [isComplete, triggerSuccess]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartPos.current) return;
+
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStartPos.current.x);
+    const deltaY = Math.abs(touch.clientY - touchStartPos.current.y);
+
+    // If finger moved more than 10px, user is scrolling - cancel hold
+    if (deltaX > 10 || deltaY > 10) {
+      isScrolling.current = true;
+      cancelHold();
+    }
+  }, [cancelHold]);
+
+  const handleTouchEnd = useCallback(() => {
+    cancelHold();
+  }, [cancelHold]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isComplete) return;
     e.preventDefault();
     setIsHolding(true);
     if (navigator.vibrate) {
       navigator.vibrate(10);
     }
-    // 1.5 seconds for better mobile UX
     holdTimer.current = setTimeout(() => {
       triggerSuccess();
       setIsHolding(false);
     }, 1500);
   }, [isComplete, triggerSuccess]);
 
-  const handleEnd = useCallback((e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    if (holdTimer.current) {
-      clearTimeout(holdTimer.current);
-      holdTimer.current = null;
-    }
-    setIsHolding(false);
-  }, []);
+  const handleMouseUp = useCallback(() => {
+    cancelHold();
+  }, [cancelHold]);
 
   return (
     <div
@@ -258,13 +303,13 @@ export default function FieldCard({
       {/* Hold area */}
       <div
         className="relative p-6 select-none"
-        style={{ touchAction: 'none' }}
-        onMouseDown={handleStart}
-        onMouseUp={handleEnd}
-        onMouseLeave={handleEnd}
-        onTouchStart={handleStart}
-        onTouchEnd={handleEnd}
-        onTouchCancel={handleEnd}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       >
         {/* Progress ring overlay when holding */}
         {isHolding && (
