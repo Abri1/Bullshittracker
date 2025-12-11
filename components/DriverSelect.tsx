@@ -28,19 +28,19 @@ export default function DriverSelect({ onSelect }: DriverSelectProps) {
       <h2 className="text-lg font-medium text-center text-muted">
         Who&apos;s hauling today?
       </h2>
-      <div className="flex gap-4">
+      <div className="flex gap-3">
         {Object.entries(DRIVER_CONFIG).map(([name, config]) => (
           <button
             key={name}
             onClick={() => onSelect(name)}
-            className={`flex-1 py-8 px-4 rounded-3xl text-center
+            className={`flex-1 py-6 px-2 rounded-2xl text-center
                        bg-gradient-to-br ${config.color}
                        transition-all duration-150
                        active:scale-95
                        shadow-lg ${config.shadow}`}
           >
-            <span className="text-5xl block mb-3">{config.emoji}</span>
-            <span className="text-2xl font-bold block text-white">{name}</span>
+            <span className="text-4xl block mb-2">{config.emoji}</span>
+            <span className="text-lg font-bold block text-white">{name}</span>
           </button>
         ))}
       </div>
