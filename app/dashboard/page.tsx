@@ -30,7 +30,7 @@ interface Achievement {
   icon: string;
 }
 
-const DRIVERS = ['ABRI', 'HEINE'];
+const DRIVERS = ['ABRI', 'HEINE', 'STEPHEN'];
 
 const MOTIVATIONAL_QUOTES = [
   "Every load counts towards greatness",

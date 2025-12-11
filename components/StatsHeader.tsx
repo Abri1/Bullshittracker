@@ -18,6 +18,7 @@ interface StatsHeaderProps {
 const DRIVER_EMOJI: Record<string, string> = {
   ABRI: '🤠',
   HEINE: '🧑‍🌾',
+  STEPHEN: '🚜',
 };
 
 export default function StatsHeader({
