@@ -17,6 +17,12 @@ const DRIVER_CONFIG = {
     color: 'from-green-500 to-green-600',
     shadow: 'shadow-green-500/25',
   },
+  STEPHEN: {
+    emoji: '🚜',
+    subtitle: 'The Boss',
+    color: 'from-purple-500 to-purple-600',
+    shadow: 'shadow-purple-500/25',
+  },
 };
 
 export default function DriverSelect({ onSelect }: DriverSelectProps) {

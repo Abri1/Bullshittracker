@@ -128,7 +128,7 @@ export default function LoginPage() {
                   <p className="text-xs text-muted">Organic</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-amber-400">2</p>
+                  <p className="text-2xl font-bold text-amber-400">3</p>
                   <p className="text-xs text-muted">Legends</p>
                 </div>
               </div>
@@ -136,7 +136,7 @@ export default function LoginPage() {
 
             {/* Footer */}
             <p className="text-center text-muted/50 text-xs mt-8">
-              Made with 💩 by Abri & Heine
+              Made with 💩 by Abri, Heine & Stephen
             </p>
           </>
         )}
