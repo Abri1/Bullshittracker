@@ -203,6 +203,17 @@ export default function DashboardPage() {
     };
   }, [fetchData]);
 
+  // Polling fallback - refresh every 30s in case WebSocket fails
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchData();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
   // Save pinned fields
   useEffect(() => {
     localStorage.setItem('pinnedFields', JSON.stringify(pinnedFields));
@@ -278,23 +289,17 @@ export default function DashboardPage() {
   }, [loads, fields]);
 
   const handleDump = useCallback(async (fieldId: string) => {
-    // Insert to Supabase - real-time subscription will add the load to state
-    // This prevents the duplicate bug caused by race condition between
-    // optimistic updates and real-time subscription
-    try {
-      const { error } = await supabase
-        .from('loads')
-        .insert({
-          field_id: fieldId,
-          driver: driverName,
-        });
+    // Optimistic update - show immediately
+    const tempId = `temp-${Date.now()}`;
+    const optimisticLoad: Load = {
+      id: tempId,
+      field_id: fieldId,
+      driver: driverName,
+      created_at: new Date().toISOString(),
+    };
+    setLoads(prev => [...prev, optimisticLoad]);
 
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error saving load:', error);
-    }
-
-    // Check achievements
+    // Check achievements immediately for instant feedback
     const driverLoadsToday = loads.filter(l => {
       const loadDate = new Date(l.created_at);
       loadDate.setHours(0, 0, 0, 0);
@@ -305,6 +310,33 @@ export default function DashboardPage() {
 
     const totalLoads = loads.filter(l => l.driver === driverName).length + 1;
     checkAchievements(totalLoads, driverLoadsToday);
+
+    // Insert to Supabase
+    try {
+      const { data, error } = await supabase
+        .from('loads')
+        .insert({
+          field_id: fieldId,
+          driver: driverName,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Replace temp load with real one (real-time might beat us, so check first)
+      setLoads(prev => {
+        const withoutTemp = prev.filter(l => l.id !== tempId);
+        if (withoutTemp.some(l => l.id === data.id)) {
+          return withoutTemp; // Real-time already added it
+        }
+        return [...withoutTemp, data];
+      });
+    } catch (error) {
+      console.error('Error saving load:', error);
+      // Revert optimistic update on error
+      setLoads(prev => prev.filter(l => l.id !== tempId));
+    }
   }, [driverName, loads, checkAchievements]);
 
   const handleTogglePin = useCallback((fieldId: string) => {
