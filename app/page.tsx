@@ -140,7 +140,7 @@ export default function LoginPage() {
 
             {/* Footer */}
             <p className="text-center text-muted/50 text-xs mt-8">
-              Made with 💩 by Abri, Heine & Stephen
+              Made by Abri
             </p>
           </>
         )}
