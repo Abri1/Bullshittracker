@@ -102,17 +102,6 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Cow ASCII art - subtle */}
-            <div className="text-center mb-8 font-mono text-xs text-white/10 leading-tight hidden sm:block">
-              <pre>{`
-        (__)
-        (oo)
-  /------\\/
- / |    ||
-*  /\\---/\\
-   ~~   ~~
-              `}</pre>
-            </div>
 
             {/* Driver selection */}
             <DriverSelect onSelect={handleDriverSelect} />
