@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, memo } from 'react';
 
 interface DriverBreakdown {
   name: string;
@@ -32,7 +32,7 @@ const getFieldIcon = (name: string): string => {
   return '🌱';
 };
 
-export default function FieldCard({
+function FieldCard({
   id,
   name,
   color,
@@ -327,3 +327,15 @@ export default function FieldCard({
     </div>
   );
 }
+
+// Memoize to prevent re-renders when other fields change
+export default memo(FieldCard, (prev, next) => {
+  return (
+    prev.id === next.id &&
+    prev.name === next.name &&
+    prev.color === next.color &&
+    prev.currentLoads === next.currentLoads &&
+    prev.isPinned === next.isPinned &&
+    JSON.stringify(prev.driverBreakdown) === JSON.stringify(next.driverBreakdown)
+  );
+});

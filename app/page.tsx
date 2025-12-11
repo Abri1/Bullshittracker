@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DriverSelect from '@/components/DriverSelect';
 import PinPad from '@/components/PinPad';
+import { supabase } from '@/lib/supabase';
 
 const TAGLINES = [
   "Because every load counts",
@@ -39,6 +40,9 @@ export default function LoginPage() {
 
   const handleDriverSelect = (name: string) => {
     setSelectedDriver(name);
+    // Prefetch dashboard data while user enters PIN
+    supabase.from('fields').select('*').eq('is_active', true);
+    supabase.from('loads').select('*');
   };
 
   const handlePinSuccess = () => {
