@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -44,11 +45,19 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
         {/* iOS Splash Screens */}
-        {/* iPhone 15 Pro Max, 15 Plus, 14 Pro Max */}
+        {/* iPhone 16 Pro Max, 17 Pro Max */}
+        <link rel="apple-touch-startup-image"
+              href="/splash/apple-splash-1320-2868.png"
+              media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3)" />
+        {/* iPhone 16 Pro, 17 Pro */}
+        <link rel="apple-touch-startup-image"
+              href="/splash/apple-splash-1206-2622.png"
+              media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3)" />
+        {/* iPhone 15 Pro Max, 15 Plus, 14 Pro Max, 16 Plus */}
         <link rel="apple-touch-startup-image"
               href="/splash/apple-splash-1290-2796.png"
               media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" />
-        {/* iPhone 15 Pro, 15, 14 Pro */}
+        {/* iPhone 15 Pro, 15, 14 Pro, 16 */}
         <link rel="apple-touch-startup-image"
               href="/splash/apple-splash-1179-2556.png"
               media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" />
@@ -81,6 +90,7 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
       </head>
       <body className="antialiased">
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>
