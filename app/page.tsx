@@ -122,18 +122,10 @@ export default function LoginPage() {
 
             {/* Fun stats */}
             <div className="mt-10 pt-6 border-t border-white/5">
-              <div className="flex justify-center gap-8 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-amber-400">∞</p>
-                  <p className="text-xs text-muted">Loads of fun</p>
-                </div>
+              <div className="flex justify-center text-center">
                 <div>
                   <p className="text-2xl font-bold text-amber-400">100%</p>
                   <p className="text-xs text-muted">Organic</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-amber-400">3</p>
-                  <p className="text-xs text-muted">Legends</p>
                 </div>
               </div>
             </div>
