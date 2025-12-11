@@ -67,9 +67,6 @@ export default function LoginPage() {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -left-20 w-40 h-40 bg-amber-500/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-amber-600/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/4 right-10 text-6xl opacity-10 rotate-12">💩</div>
-        <div className="absolute bottom-1/4 left-10 text-4xl opacity-10 -rotate-12">🐄</div>
-        <div className="absolute top-1/3 left-1/4 text-3xl opacity-5">🚜</div>
       </div>
 
       {/* Main content */}
