@@ -188,6 +188,21 @@ export default function DashboardPage() {
     };
   }, [fetchData]);
 
+  // Refresh data when app becomes visible (PWA background/foreground)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchData]);
+
   // Save pinned fields
   useEffect(() => {
     localStorage.setItem('pinnedFields', JSON.stringify(pinnedFields));
