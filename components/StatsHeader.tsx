@@ -75,7 +75,6 @@ export default function StatsHeader({
         {/* Driver stats - head to head */}
         <div className="flex gap-3 mb-3">
           {drivers.map((driver) => {
-            const isLeader = driver.todayLoads > 0 && driver.todayLoads >= Math.max(...drivers.map(d => d.todayLoads));
             const isCurrentDriver = driver.name === currentDriver;
 
             return (
@@ -96,14 +95,11 @@ export default function StatsHeader({
                 )}
 
                 <div className="relative">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{DRIVER_EMOJI[driver.name]}</span>
-                      <span className={`text-sm font-medium ${isCurrentDriver ? 'text-white' : 'text-muted'}`}>
-                        {driver.name}
-                      </span>
-                    </div>
-                    {isLeader && <span className="text-lg animate-bounce">👑</span>}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">{DRIVER_EMOJI[driver.name]}</span>
+                    <span className={`text-sm font-medium ${isCurrentDriver ? 'text-white' : 'text-muted'}`}>
+                      {driver.name}
+                    </span>
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-black bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
